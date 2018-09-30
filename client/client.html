@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Our simple HTTP server</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <style>
+    #wrapper{
+    position:relative;
+    width:400px;
+    height:543px;
+  }
+  #canvas,#imageCanvas{
+    position:absolute; top:0px; left:0px;
+    width:400px;
+    height:543px;
+}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+  <script type="text/babel">
+
+    var canvas, ctx, imgCanvas, imgCtx;
+
+
+    const handleResponse = (xhr, parseResponse) => {
+      const content = document.querySelector('#content');
+      //const type = xhr.getResponseHeader('content-type');
+
+      console.log(xhr.status);
+      switch(xhr.status) {
+        case 200: 
+          content.innerHTML = `<b>Success </b>`;
+          break;
+        case 201: 
+          content.innerHTML = `<b>User Created</b>`;
+          break;
+        case 204:
+          
+          content.innerHTML = '<b>Updated</b>';
+          break;
+        case 400:
+          content.innerHTML = '<b>Bad Request</b>';
+          break;
+        case 404: 
+          content.innerHTML = `<b>Resource Not Found</b>`;
+          break;
+        default: 
+          content.innerHTML = `<b>Resource Not Found</b>`;
+          break;
+      
+        }
+       
+      
+     
+        if(parseResponse && xhr.response) {
+   
+          const obj = JSON.parse(xhr.response);
+
+          console.dir(obj);
+          if(obj.users){
+            content.innerHTML += `<br/> ${JSON.stringify(obj.users)}`;
+          }
+          else{
+            content.innerHTML += `<br/>  ${obj.message}`;
+          }
+          
+        }
+        else {
+          console.log('received');
+        }
+
+
+    };
+
+   
+    const requestUpdate = (e, userForm) => {
+      
+      
+     
+      
+      const url = userForm.querySelector('#urlField').value;
+      const method = userForm.querySelector('#methodSelect').value;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open(method,url);
+
+      xhr.setRequestHeader('Accept', 'application/json');
+
+
+      if(method === 'get'){
+        xhr.onload = () => handleResponse(xhr, true);
+      }
+      else{
+        xhr.onload = () => handleResponse(xhr, false);
+      }
+      
+      //send ajax request
+      xhr.send();
+      
+      //cancel browser's default action
+      e.preventDefault();
+      //return false to prevent page redirection from a form
+      return false;
+
+
+    };
+
+    function convertToImage(){
+      var image = new Image();
+      image.src = imgCanvas.toDataURL('image/png');
+      return image;
+    }
+
+    const sendPost = (e, nameForm) => {
+      
+      imgCtx.drawImage(canvas, 0, 0);
+      ctx.clearRect(0,0,canvas.width, canvas.height);
+      
+      
+      const nameAction = nameForm.getAttribute('action');
+      const nameMethod = nameForm.getAttribute('method');
+
+      const nameField = nameForm.querySelector('#nameField');
+      const costField = nameForm.querySelector('#costField');
+      const attackField = nameForm.querySelector('#attackField');
+      const healthField = nameForm.querySelector('#healthField');
+      const textField = nameForm.querySelector('#textField');
+      var rarityImg = document.getElementById('rarityField');
+      const rarityField = rarityImg.options[rarityImg.selectedIndex].text;
+      var classImg = document.getElementById('classField');
+      const classField = classImg.options[classImg.selectedIndex].text;
+      
+      
+      //Stream Image
+      //const cardField = convertToImage();
+    
+      const xhr = new XMLHttpRequest();
+      xhr.open(nameMethod, nameAction);
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhr.setRequestHeader('enctype', "multipart/form-data");
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.onload = () => handleResponse(xhr, true);
+
+      const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}`;
+      //console.log(formData);
+      
+     
+      
+    
+      xhr.send(formData);
+      
+
+
+      e.preventDefault();
+      return false;
+      
+    };
+
+
+    const init = () => {
+   
+      canvas = document.querySelector('#canvas');
+      ctx = canvas.getContext('2d');
+      imgCanvas = document.querySelector('#imageCanvas');
+      imgCtx = imgCanvas.getContext('2d');
+      //Post Instructions
+      const nameForm = document.querySelector('#nameForm');
+      const addUser = (e) => sendPost(e, nameForm);
+      document.getElementById('createCardButton').addEventListener('click', addUser);
+
+      //GET intructions
+      const userForm = document.querySelector('#userForm');
+      const getUsers = (e) => requestUpdate(e, userForm);
+      userForm.addEventListener('submit', getUsers);
+
+      //Uploads an image for the background image
+      var imgSumbit =  document.getElementById("imageField"); 
+      imgSumbit.onchange = function(){
+        if (imgSumbit.files && imgSumbit.files[0]) {
+          var reader = new FileReader();
+          reader.onloadend = readPic;
+          reader.readAsDataURL(imgSumbit.files[0]);
+        }
+      }
+    
+    var classImg = document.getElementById('classField');
+    var rarityImg = document.getElementById('rarityField');
+
+      rarityImg.onchange = function(){
+        console.log( rarityImg.options[rarityImg.selectedIndex].text);
+        setGem(rarityImg.value);
+      }
+
+    classImg.onchange = function(){
+
+      setBackground(classImg.value, rarityImg.value);  
+    }
+    
+    document.getElementById('nameField').onchange = function(){
+    
+      setBackground(classImg.value, rarityImg.value);        
+    }
+    document.getElementById('attackField').onchange = function(){    
+      setBackground(classImg.value, rarityImg.value);  
+        }
+    document.getElementById('healthField').onchange = function(){
+      setBackground(classImg.value, rarityImg.value);  
+    }
+    document.getElementById('textField').onchange = function(){
+      setBackground(classImg.value, rarityImg.value);  
+    }
+    document.getElementById('costField').onchange = function(){
+      setBackground(classImg.value, rarityImg.value);  
+        }
+  
+    
+    };
+
+
+    function setBackground(url, gemUrl){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      var img = new Image();
+      img.onload = function(){
+        console.log(img.width + "   " + img.height);
+        ctx.drawImage(img, -10, 0);
+        setGem(gemUrl); 
+        updateText();     
+    }
+      img.src = url;
+
+    }
+
+    function setGem(url){
+      var img = new Image();
+      img.onload = function(){
+        
+        ctx.drawImage(img, canvas.width/2 -14, canvas.height/2+30);
+
+      
+      }
+      img.src = url;
+
+    }
+    
+
+    function updateText(){
+
+      
+      updateField("setName", "nameField", 143, 60);
+    
+      updateField("setAttack", "attackField", 30, 450);
+   
+      updateField("setHealth", "healthField", 260, 450);
+  
+      updateField("setText", "textField", 143, 270);
+
+      updateField("setCost", "costField", 30, 30);
+    }
+
+ 
+    function updateField(location, value, x, y){
+      var textVal = document.getElementById(value).value;
+      document.getElementById(location).innerHTML = textVal;
+      ctx.font = "30px Arial";
+      ctx.textAlign="center";    
+      ctx.fillText(textVal,x,y);
+      
+    }
+
+    function  readPic(e) {
+      console.log("test");
+      imgCtx.clearRect(0,0, imgCanvas.width,imgCanvas.height);
+      var img = new Image();
+
+      var newImg = document.getElementById('setImg');
+      newImg.src =e.target.result;
+      newImg.width = canvas.width;
+      img.onload = function(){
+        var ratio = img.height/img.width;
+        imgCtx.globalCompositeOperation = 'destination-over';
+        imgCtx.drawImage(img, 40, 10, canvas.width-100, canvas.width* ratio - 10);
+        imgCtx.globalCompositeOperation = 'source-over';
+        }
+      img.src = e.target.result;
+      
+    }
+
+    window.onload = init;
+
+  </script>
+</head>
+
+<body>
+  <section id="top">
+    <h3>POST Status Code Tests</h3>
+    <form id="nameForm" action="/addCard" method="post">
+      <label for="name">Card Name: </label>
+      <input id="nameField" type="text" name="name" value="tempname" required />
+      <label for="attack">Attack: </label>
+      <input id="attackField" type="number" name="attack" min="0" max="100" step="1" value="1" required />
+      <label for="health">Health: </label>
+      <input id="healthField" type="number" name="health" min="0" max="100" step="1" value="1" required />
+      <label for="cost">Cost: </label>
+      <input id="costField" type="number" name="cost" min="0" max="100" step="1" value="1" required />
+      <label for="cardText">Card Text: </label>
+      <input id="textField" type="text" name="cardText" value="1" required />
+      <label for="class">Class: </label>
+
+      <select id="classField" name="class">
+        <option value="Images/card_minion_neutral.png">Neutral</option>
+        <option value="Images/card_minion_mage.png">Mage</option>
+        <option value="Images/card_minion_warrior.png">Warrior</option>
+        <option value="Images/card_minion_hunter.png">Hunter</option>
+        <option value="Images/card_minion_druid.png">Druid</option>
+        <option value="Images/card_minion_priest.png">Preist</option>
+        <option value="Images/card_minion_paladin.png">Paladin</option>
+        <option value="Images/card_minion_shaman.png">Shaman</option>
+        <option value="Images/card_minion_warlock.png">Warlock</option>
+        <option value="Images/card_minion_rogue.png">Rouge</option>
+
+      </select>
+
+      <label for="rarity">Rarity: </label>
+      <select id="rarityField" name='rarity'>
+        <option value="">classic</option>
+        <option value="Images/gem_common.png">Common</option>
+        <option value="Images/gem_rare.png">Rare</option>
+        <option value="Images/gem_epic.png">Epic</option>
+        <option value="Images/gem_legendary.png">Legendary</option>
+      </select>
+
+      <label for="cardPic">Card Picture</label>
+      <input id="imageField" type="file" name="cardPic" accept="image/*" />
+      <input type="button" id='createCardButton' value="AddCard" />
+    </form>
+    <form id="userForm" action="/getUsers" method="get">
+      <select id='urlField'>
+        <option value='/getUsers'>/getUsers</option>
+        <option value='/notReal'>/notReal</option>
+      </select>
+      <select id="methodSelect">
+        <option value="get">GET</option>
+        <option value="head">HEAD</option>
+      </select>
+      <input type="submit" id='getUser' value="Get User" />
+    </form>
+
+
+  </section>
+  <div id="wrapper">
+    <canvas id="imageCanvas" width="400" height="543"></canvas>
+    <canvas id="canvas" width="400" height="543"></canvas>
+
+  </div>
+  <div id="card">
+    <p id="setName"></p>
+    <p id="setAttack"></p>
+    <p id="setHealth"></p>
+    <p id="setText"></p>
+    <p id="setCost"></p>
+    <img id="setImg" src="#" />
+  </div>
+  <section id="content">
+  </section>
+</body>
+
+</html>
