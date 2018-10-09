@@ -1,4 +1,4 @@
-const users = {};
+const users = [];
 
 
 const respondJSON = (request, response, status, object) => {
@@ -31,17 +31,27 @@ const addUser = (request, response, body) => {
   }
 
   let responseCode = 201;
-  if (users[body.name]) {
+  let newCard = true;
+  let cardLoc = 0;
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].name === body.name) {
+      newCard = false;
+      cardLoc = i;
+    }
+  }
+
+  if (!newCard) {
     responseCode = 204;
-    users[body.name].name = body.name;
-    users[body.name].cost = body.cost;
-    users[body.name].attack = body.attack;
-    users[body.name].health = body.health;
-    users[body.name].text = body.text;
-    users[body.name].rarity = body.rarity;
-    users[body.name].class = body.class;
+    users[cardLoc].name = body.name;
+    users[cardLoc].cost = body.cost;
+    users[cardLoc].attack = body.attack;
+    users[cardLoc].health = body.health;
+    users[cardLoc].text = body.text;
+    users[cardLoc].rarity = body.rarity;
+    users[cardLoc].class = body.class;
   } else {
-    users[body.name] = { name: body.name,
+    // add new User to end of array
+    users[users.length] = { name: body.name,
       cost: body.cost,
       health: body.health,
       attack: body.attack,

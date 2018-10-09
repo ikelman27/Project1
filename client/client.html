@@ -21,7 +21,8 @@
 
     var canvas, ctx, imgCanvas, imgCtx;
 
-
+    var createdCards= [];
+    var cardIndex = 0;
     const handleResponse = (xhr, parseResponse) => {
       const content = document.querySelector('#content');
       //const type = xhr.getResponseHeader('content-type');
@@ -58,7 +59,10 @@
 
           console.dir(obj);
           if(obj.users){
-            content.innerHTML += `<br/> ${JSON.stringify(obj.users)}`;
+            console.log(obj.users);
+            content.innerHTML += `<br/> ${JSON.stringify(obj.users[0])}`;
+            createdCards= obj.users;
+            drawFromServer(obj.users[0]);
           }
           else{
             content.innerHTML += `<br/>  ${obj.message}`;
@@ -116,6 +120,7 @@
       imgCtx.drawImage(canvas, 0, 0);
       ctx.clearRect(0,0,canvas.width, canvas.height);
       
+      imgCtx.clearRect(0,0,canvas.width, canvas.height );
       
       const nameAction = nameForm.getAttribute('action');
       const nameMethod = nameForm.getAttribute('method');
@@ -143,7 +148,7 @@
       xhr.onload = () => handleResponse(xhr, true);
 
       const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}`;
-      //console.log(formData);
+      
       
      
       
@@ -157,6 +162,50 @@
       
     };
 
+
+    function drawFromServer(card){
+      var cardClass;
+      var gemClass;
+      var classImg = document.getElementById('classField');
+      var rarityImg = document.getElementById('rarityField');
+      //console.log(classImg.length);
+      for(var i = 0; i < classImg.length; i++){
+        if(classImg[i].text == card.class){
+          cardClass = classImg[i].value;
+
+        }
+        
+      }
+      for(var i = 0; i < rarityImg.length; i++){
+        if(rarityImg[i].text == card.rarity){
+          gemClass = rarityImg[i].value;
+        }
+      }
+
+       setBackground(cardClass, gemClass, card);
+
+    }
+
+    function updateCardServer(card){
+     
+      updateFromServer("setName", card.name, 200, 300);
+    
+      updateFromServer("setAttack", card.attack, 50, 490);
+   
+      updateFromServer("setHealth", card.health, 345, 490);
+  
+      updateFromServer("setText", card.text, 200, 430);
+
+      updateFromServer("setCost", card.cost, 50, 50);
+    }
+
+    function updateFromServer(location, value, x, y){
+      document.getElementById(location).innerHTML = value;
+      ctx.font = "30px Arial";
+      ctx.textAlign="center";    
+      ctx.fillText(value,x,y);
+      
+    }
 
     const init = () => {
    
@@ -199,34 +248,50 @@
     
     document.getElementById('nameField').onchange = function(){
     
-      setBackground(classImg.value, rarityImg.value);        
-    }
+      setBackground(classImg.value, rarityImg.value);
+        }
     document.getElementById('attackField').onchange = function(){    
-      setBackground(classImg.value, rarityImg.value);  
-        }
+      setBackground(classImg.value, rarityImg.value);
+            }
     document.getElementById('healthField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);  
-    }
-    document.getElementById('textField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);  
-    }
-    document.getElementById('costField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);  
+      setBackground(classImg.value, rarityImg.value);
         }
-  
+    document.getElementById('textField').onchange = function(){
+      setBackground(classImg.value, rarityImg.value);
+        }
+    document.getElementById('costField').onchange = function(){
+      setBackground(classImg.value, rarityImg.value);        
+        }
+      
+      document.getElementById('next').onclick = function(){
+        cardIndex++;
+        drawFromServer(createdCards[cardIndex]);
+      }
+
+      document.getElementById('previous').onclick = function(){
+      
+        cardIndex--;
+        drawFromServer(createdCards[cardIndex]);
+
+      }
     
     };
 
 
-    function setBackground(url, gemUrl){
+    function setBackground(url, gemUrl, fromServer){
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       var img = new Image();
       img.onload = function(){
         console.log(img.width + "   " + img.height);
         ctx.drawImage(img, -10, 0);
         setGem(gemUrl); 
-        updateText();     
-    }
+        if(fromServer){
+          updateCardServer(fromServer);
+        }
+        else{
+          updateText();
+        }
+      }
       img.src = url;
 
     }
@@ -247,15 +312,15 @@
     function updateText(){
 
       
-      updateField("setName", "nameField", 143, 60);
+      updateField("setName", "nameField", 200, 300);
     
-      updateField("setAttack", "attackField", 30, 450);
+      updateField("setAttack", "attackField", 50, 490);
    
-      updateField("setHealth", "healthField", 260, 450);
+      updateField("setHealth", "healthField", 345, 490);
   
-      updateField("setText", "textField", 143, 270);
+      updateField("setText", "textField", 200, 430);
 
-      updateField("setCost", "costField", 30, 30);
+      updateField("setCost", "costField", 50, 50);
     }
 
  
@@ -269,7 +334,7 @@
     }
 
     function  readPic(e) {
-      console.log("test");
+      
       imgCtx.clearRect(0,0, imgCanvas.width,imgCanvas.height);
       var img = new Image();
 
@@ -348,6 +413,8 @@
 
 
   </section>
+  <button id="next">Next Card</button>
+  <button id="previous">Previous Card</button>
   <div id="wrapper">
     <canvas id="imageCanvas" width="400" height="543"></canvas>
     <canvas id="canvas" width="400" height="543"></canvas>
