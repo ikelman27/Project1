@@ -3,7 +3,7 @@
 
 <head>
   <title>Our simple HTTP server</title>
-  <link rel="stylesheet" type="text/css" href="/style.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
   <style>
     #wrapper{
     position:relative;
@@ -57,13 +57,13 @@
    
           const obj = JSON.parse(xhr.response);
 
-          console.dir(obj);
-          if(obj.users){
-            console.log(obj.users);
-            content.innerHTML += `<br/> ${JSON.stringify(obj.users[0])}`;
-            createdCards= obj.users;
-            drawFromServer(obj.users[0]);
-            if(obj.users.length > 1){
+          //console.dir(obj);
+          if(obj.exportVal){
+            console.log(obj.exportVal);
+            content.innerHTML += `<br/> ${JSON.stringify(obj.exportVal[0])}`;
+            createdCards= obj.exportVal;
+            drawFromServer(obj.exportVal[0]);
+            if(obj.exportVal.length > 1){
               document.getElementById('next').disabled = false;
 
             }
@@ -89,12 +89,15 @@
       
       const url = userForm.querySelector('#urlField').value;
       const method = userForm.querySelector('#methodSelect').value;
-
+      
       const xhr = new XMLHttpRequest();
-      xhr.open(method,url);
+      const qs = {class: "Mage"};
+      const query = Object.keys(qs).map(key => key + '='+ qs[key]).join('&');
+      console.log(url +'?' +query);
+      xhr.open(method, url +'?' +query);
 
       xhr.setRequestHeader('Accept', 'application/json');
-
+      
 
       if(method === 'get'){
         xhr.onload = () => handleResponse(xhr, true);

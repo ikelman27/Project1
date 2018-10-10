@@ -36,6 +36,9 @@ const handlePost = (request, response, parsedUrl) => {
 // function to handle requests
 const onRequest = (request, response) => {
   const parsedUrl = url.parse(request.url);
+  const params = query.parse(parsedUrl.query);
+
+  //console.log(params);
 
   if (request.method === 'POST') {
     handlePost(request, response, parsedUrl);
@@ -52,7 +55,7 @@ const onRequest = (request, response) => {
     } else if (parsedUrl.pathname === '/style.css') {
       htmlHandler.getCSS(request, response);
     } else if (parsedUrl.pathname === '/getUsers') {
-      jsonHandler.getUsers(request, response);
+      jsonHandler.getUsers(request, response, params);
     } else if (parsedUrl.pathname === '/updateUser') {
       jsonHandler.updateUser(request, response);
     } else {
