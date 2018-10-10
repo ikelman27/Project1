@@ -63,6 +63,11 @@
             content.innerHTML += `<br/> ${JSON.stringify(obj.users[0])}`;
             createdCards= obj.users;
             drawFromServer(obj.users[0]);
+            if(obj.users.length > 1){
+              document.getElementById('next').disabled = false;
+
+            }
+
           }
           else{
             content.innerHTML += `<br/>  ${obj.message}`;
@@ -209,6 +214,8 @@
 
     const init = () => {
    
+
+
       canvas = document.querySelector('#canvas');
       ctx = canvas.getContext('2d');
       imgCanvas = document.querySelector('#imageCanvas');
@@ -266,14 +273,27 @@
       document.getElementById('next').onclick = function(){
         cardIndex++;
         drawFromServer(createdCards[cardIndex]);
+        console.log(createdCards.length);
+        if(cardIndex == createdCards.length-1){
+          document.getElementById('next').disabled = true;
+        }
+        document.getElementById('previous').disabled = false;
       }
 
       document.getElementById('previous').onclick = function(){
       
         cardIndex--;
         drawFromServer(createdCards[cardIndex]);
-
+        if(cardIndex == 0){
+          document.getElementById('previous').disabled = true;
+        }
+        document.getElementById('next').disabled = false;
       }
+
+      //Disable the buttons untill we get cards from the server
+      document.getElementById('next').disabled = true;
+      document.getElementById('previous').disabled = true;
+
     
     };
 
