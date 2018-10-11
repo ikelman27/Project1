@@ -51,7 +51,6 @@ const onRequest = (request, response) => {
         'Content-Type': 'image/gif',
       });
       response.end(img, 'binary');
-
     } else if (parsedUrl.pathname === '/style.css') {
       htmlHandler.getCSS(request, response);
     } else if (parsedUrl.pathname === '/getUsers') {
