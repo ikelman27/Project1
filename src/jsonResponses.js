@@ -12,11 +12,25 @@ const respondJSON = (request, response, status, object) => {
   response.end();
 };
 
+
 const respondJSONMeta = (request, response, status) => {
-  response.writeHead(status, { 'Content-Type': 'application/json' });
+  response.writeHead(status, {
+    'Content-Type': 'application/json',
+  });
   response.end();
 };
 
+
+const cardNotFound = (request, response, message) => {
+  // create error message for response
+  const responseJSON = {
+    message,
+    id: 'notFound',
+  };
+
+
+  return respondJSON(request, response, 404, responseJSON);
+};
 
 const addUser = (request, response, body) => {
   const responseJSON = {
@@ -33,7 +47,7 @@ const addUser = (request, response, body) => {
   let responseCode = 201;
   let newCard = true;
   let cardLoc = 0;
-  for (var i = 0; i < users.length; i++) {
+  for (let i = 0; i < users.length; i++) {
     if (users[i].name === body.name) {
       newCard = false;
       cardLoc = i;
@@ -51,13 +65,15 @@ const addUser = (request, response, body) => {
     users[cardLoc].class = body.class;
   } else {
     // add new User to end of array
-    users.push({ name: body.name,
+    users.push({
+      name: body.name,
       cost: body.cost,
       health: body.health,
       attack: body.attack,
       text: body.text,
       rarity: body.rarity,
-      class: body.class });
+      class: body.class,
+    });
   }
 
   if (responseCode === 201) {
@@ -70,23 +86,35 @@ const addUser = (request, response, body) => {
 
 
 const getUsers = (request, response, params) => {
-  var exportVal =[];
-  //if there are no paramiters return every card
-  if(!params){
+  let exportVal = [];
+  // if there are no paramiters return every card
+  if (!params) {
     exportVal = users;
   }
-  var keys = Object.keys(params);
-  //console.log(users[0][keys[0]]);
-  
-  for(var i = 0; i < users.length; i++){
-    if(params[keys[0]] === users[i][keys[0]]){
+  const keys = Object.keys(params);
+  // console.log("Key length " + keys.length);
+
+  // loop through every card and check if it meets params to return
+  for (let i = 0; i < users.length; i++) {
+    let addCard = true;
+    for (let j = 0; j < keys.length; j++) {
+      if (params[keys[j]] !== users[i][keys[j]] && params[keys[j]] !== 'All') {
+        addCard = false;
+      }
+    }
+
+    if (addCard) {
       exportVal.push(users[i]);
     }
   }
+  if (exportVal.length === 0) {
+    return cardNotFound(request, response, 'no cards match that description');
+  }
 
-
-  //exportVal.push();
-  const responseJSON = {exportVal };
+  // exportVal.push();
+  const responseJSON = {
+    exportVal,
+  };
   return respondJSON(request, response, 200, responseJSON);
 };
 
@@ -115,5 +143,6 @@ module.exports = {
   notFound,
   notFoundMeta,
   addUser,
+  cardNotFound,
 
 };

@@ -59,20 +59,29 @@
 
           //console.dir(obj);
           if(obj.exportVal){
-            console.log(obj.exportVal);
-            content.innerHTML += `<br/> ${JSON.stringify(obj.exportVal[0])}`;
-            createdCards= obj.exportVal;
-            drawFromServer(obj.exportVal[0]);
-            if(obj.exportVal.length > 1){
-              document.getElementById('next').disabled = false;
+            if(obj.exportVal.length > 0){
+              console.log(obj.exportVal);
+              content.innerHTML += `<br/> ${JSON.stringify(obj.exportVal[0])}`;
+              createdCards= obj.exportVal;
+              drawFromServer(obj.exportVal[0]);
+              if(obj.exportVal.length > 1){
+                document.getElementById('next').disabled = false;
+              }
+              else{
+                document.getElementById('next').disabled = true;
+              }
 
             }
-
+            else{
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              imgCtx.clearRect(0, 0, canvas.width, canvas.height);
+              
+            }
+            
           }
           else{
-            content.innerHTML += `<br/>  ${obj.message}`;
-          }
-          
+              content.innerHTML += `<br/>  ${obj.message}`;
+            }
         }
         else {
           console.log('received');
@@ -90,8 +99,18 @@
       const url = userForm.querySelector('#urlField').value;
       const method = userForm.querySelector('#methodSelect').value;
       
+      const getClass = userForm.querySelector('#getClass').value;
+      const getRarity = userForm.querySelector('#getRarityField').value;
+      //console.log(getClass);
       const xhr = new XMLHttpRequest();
-      const qs = {class: "Mage"};
+      const qs = {
+        class:getClass,
+        rarity: getRarity,
+
+      };
+
+      
+
       const query = Object.keys(qs).map(key => key + '='+ qs[key]).join('&');
       console.log(url +'?' +query);
       xhr.open(method, url +'?' +query);
@@ -117,11 +136,7 @@
 
     };
 
-    function convertToImage(){
-      var image = new Image();
-      image.src = imgCanvas.toDataURL('image/png');
-      return image;
-    }
+    
 
     const sendPost = (e, nameForm) => {
       
@@ -149,17 +164,13 @@
     
       const xhr = new XMLHttpRequest();
       xhr.open(nameMethod, nameAction);
-      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-      xhr.setRequestHeader('enctype', "multipart/form-data");
+      
       xhr.setRequestHeader('Accept', 'application/json');
 
       xhr.onload = () => handleResponse(xhr, true);
 
       const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}`;
-      
-      
-     
-      
+    
     
       xhr.send(formData);
       
@@ -233,16 +244,6 @@
       const getUsers = (e) => requestUpdate(e, userForm);
       userForm.addEventListener('submit', getUsers);
 
-      //Uploads an image for the background image
-      var imgSumbit =  document.getElementById("imageField"); 
-      imgSumbit.onchange = function(){
-        if (imgSumbit.files && imgSumbit.files[0]) {
-          var reader = new FileReader();
-          reader.onloadend = readPic;
-          reader.readAsDataURL(imgSumbit.files[0]);
-        }
-      }
-    
     var classImg = document.getElementById('classField');
     var rarityImg = document.getElementById('rarityField');
 
@@ -411,15 +412,12 @@
 
       <label for="rarity">Rarity: </label>
       <select id="rarityField" name='rarity'>
-        <option value="">classic</option>
+        <option value="">Classic</option>
         <option value="Images/gem_common.png">Common</option>
         <option value="Images/gem_rare.png">Rare</option>
         <option value="Images/gem_epic.png">Epic</option>
         <option value="Images/gem_legendary.png">Legendary</option>
       </select>
-
-      <label for="cardPic">Card Picture</label>
-      <input id="imageField" type="file" name="cardPic" accept="image/*" />
       <input type="button" id='createCardButton' value="AddCard" />
     </form>
     <form id="userForm" action="/getUsers" method="get">
@@ -431,6 +429,32 @@
         <option value="get">GET</option>
         <option value="head">HEAD</option>
       </select>
+      <label for="getClass">Get cards of class: </label>
+      <select id="getClass" name="getClass">
+        <option value="All">All</option>
+        <option value="Neutral">Neutral</option>
+        <option value="Mage">Mage</option>
+        <option value="Warrior">Warrior</option>
+        <option value="Hunter">Hunter</option>
+        <option value="Druid">Druid</option>
+        <option value="Preist">Preist</option>
+        <option value="Paladin">Paladin</option>
+        <option value="Shaman">Shaman</option>
+        <option value="Warlock">Warlock</option>
+        <option value="Rouge">Rouge</option>
+
+      </select>
+
+       <label for="getRarity">Get cards of Rarity: </label>
+      <select id="getRarityField" name='getRarity'>
+        <option value="All">All</option>
+        <option value="Classic">Classic</option>
+        <option value="Common">Common</option>
+        <option value="Rare">Rare</option>
+        <option value="Epic">Epic</option>
+        <option value="Legendary">Legendary</option>
+      </select>
+
       <input type="submit" id='getUser' value="Get User" />
     </form>
 

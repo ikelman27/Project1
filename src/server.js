@@ -38,7 +38,7 @@ const onRequest = (request, response) => {
   const parsedUrl = url.parse(request.url);
   const params = query.parse(parsedUrl.query);
 
-  //console.log(params);
+  // console.log(params);
 
   if (request.method === 'POST') {
     handlePost(request, response, parsedUrl);
