@@ -45,14 +45,14 @@ const onRequest = (request, response) => {
   } else if (request.method === 'GET') {
     if (parsedUrl.pathname === '/') {
       htmlHandler.getIndex(request, response);
-    //} //else if (parsedUrl.pathname.indexOf('/Images') > -1) { // Get images for card background
-      /* console.log(`${__dirname}/../Client${parsedUrl.pathname}`);
-      const img = fs.readFileSync(`${__dirname}/../Client${parsedUrl.pathname}`);
+    } else if (parsedUrl.pathname.indexOf('/Images') > -1) { // Get images for card background
+      // console.log(`${__dirname}/../Client${parsedUrl.pathname}`);
+      const img = fs.readFileSync(`./${parsedUrl.pathname}`);
       response.writeHead(200, {
         'Content-Type': 'image/gif',
       });
       response.end(img, 'binary');
-      */
+
     } else if (parsedUrl.pathname === '/style.css') {
       htmlHandler.getCSS(request, response);
     } else if (parsedUrl.pathname === '/getUsers') {
