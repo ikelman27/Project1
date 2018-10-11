@@ -19,3 +19,75 @@ html, body {
   font-size: 2em;
   text-align: center;
 }
+
+#wrapper{
+  margin: auto;
+  position:relative;
+  width:400px;
+  height:543px;
+}
+#canvas,#imageCanvas{
+  position:absolute; top:0px; left:0px;
+  width:400px;
+  height:543px;
+}
+#cardView{
+  margin-top: 40px;
+}
+
+#next, #previous{
+  position: absolute;
+  margin-top: 200px;
+  padding: 30px;
+  display: none;
+}
+
+#previous{
+  margin-left: 10%;
+}
+
+#next{
+  margin-left: 80%;
+}
+
+.cardViewer{
+  display: none;
+}
+
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+  margin-bottom: 15px;
+}
+
+#like{
+  padding: 20px;
+  font-size: 22px;
+  position: absolute;
+  text-align: center;
+  margin-left: 35%;
+  margin-top: 550px;
+  display: none;
+  
+  
+}
+
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 21%;
+  transition: 0.3s;
+}
+
+#votes{
+  font-size: 22px;
+  margin: auto;
+  position: relative;
+  display: none;
+  text-align: center;
+}
+

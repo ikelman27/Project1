@@ -5,16 +5,7 @@
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <style>
-    #wrapper{
-    position:relative;
-    width:400px;
-    height:543px;
-  }
-  #canvas,#imageCanvas{
-    position:absolute; top:0px; left:0px;
-    width:400px;
-    height:543px;
-}
+
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
@@ -42,6 +33,8 @@
         case 400:
           content.innerHTML = '<b>Bad Request</b>';
           break;
+        case 403:
+          content.innerHTML = '<b>Forbidden</b>';
         case 404: 
           content.innerHTML = `<b>Resource Not Found</b>`;
           break;
@@ -52,30 +45,39 @@
         }
        
       
-     
+        
         if(parseResponse && xhr.response) {
    
           const obj = JSON.parse(xhr.response);
-
-          //console.dir(obj);
+          
+          console.dir(obj);
           if(obj.exportVal){
             if(obj.exportVal.length > 0){
-              console.log(obj.exportVal);
-              content.innerHTML += `<br/> ${JSON.stringify(obj.exportVal[0])}`;
+             
+              //content.innerHTML += `<br/> ${obj.exportVal[0].score}`;'<b>Updated</b>
+              document.getElementById("votes").innerHTML = "<b>Votes: " + obj.exportVal[0].score +"</b>";
               createdCards= obj.exportVal;
+              cardIndex = 0;
               drawFromServer(obj.exportVal[0]);
+              console.dir(obj.exportVal[0]);
+              document.getElementById('like').disabled = false;
               if(obj.exportVal.length > 1){
+                
                 document.getElementById('next').disabled = false;
+                
+
               }
               else{
                 document.getElementById('next').disabled = true;
+                
               }
 
             }
             else{
+              document.getElementById('like').disabled = true;
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               imgCtx.clearRect(0, 0, canvas.width, canvas.height);
-              
+
             }
             
           }
@@ -91,6 +93,8 @@
     };
 
    
+
+
     const requestUpdate = (e, userForm) => {
       
       
@@ -137,6 +141,24 @@
     };
 
     
+    function like(){
+      if(createdCards.length <= 0){
+        return;
+      }
+      const nameField = createdCards[cardIndex].name;
+      const voteField = 1;
+      console.log(nameField);
+      const xhr = new XMLHttpRequest();
+      xhr.open('post', '/addCard');
+      
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.onload = () => handleResponse(xhr, true);
+      
+      const formData = `name=${nameField}&vote=1`;
+      xhr.send(formData);
+      return false;
+    }
 
     const sendPost = (e, nameForm) => {
       
@@ -158,7 +180,9 @@
       var classImg = document.getElementById('classField');
       const classField = classImg.options[classImg.selectedIndex].text;
       
-      
+      var cardArt = document.getElementById('artField');
+      const artField = cardArt.options[cardArt.selectedIndex].text;
+
       //Stream Image
       //const cardField = convertToImage();
     
@@ -169,7 +193,7 @@
 
       xhr.onload = () => handleResponse(xhr, true);
 
-      const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}`;
+      const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}&cardArt=${artField}`;
     
     
       xhr.send(formData);
@@ -187,7 +211,7 @@
       var gemClass;
       var classImg = document.getElementById('classField');
       var rarityImg = document.getElementById('rarityField');
-      //console.log(classImg.length);
+      var cardArt = document.getElementById('artField');
       for(var i = 0; i < classImg.length; i++){
         if(classImg[i].text == card.class){
           cardClass = classImg[i].value;
@@ -200,17 +224,22 @@
           gemClass = rarityImg[i].value;
         }
       }
+      
 
-       setBackground(cardClass, gemClass, card);
-
+      setBackground(cardClass, gemClass, card);
+      
+      for(var i = 0; i <cardArt.length; i++){
+        if(cardArt[i].text == card.cardArt){
+          readPic(cardArt[i].value);
+        }
+      }
     }
 
     function updateCardServer(card){
-     
       updateFromServer("setName", card.name, 200, 300);
     
       updateFromServer("setAttack", card.attack, 50, 490);
-   
+
       updateFromServer("setHealth", card.health, 345, 490);
   
       updateFromServer("setText", card.text, 200, 430);
@@ -219,7 +248,6 @@
     }
 
     function updateFromServer(location, value, x, y){
-      document.getElementById(location).innerHTML = value;
       ctx.font = "30px Arial";
       ctx.textAlign="center";    
       ctx.fillText(value,x,y);
@@ -248,7 +276,7 @@
     var rarityImg = document.getElementById('rarityField');
 
       rarityImg.onchange = function(){
-        console.log( rarityImg.options[rarityImg.selectedIndex].text);
+        //console.log( rarityImg.options[rarityImg.selectedIndex].text);
         setGem(rarityImg.value);
       }
 
@@ -257,27 +285,50 @@
       setBackground(classImg.value, rarityImg.value);  
     }
     
+    document.getElementById('makeCard').onclick = function(){
+      document.getElementById('nameForm').style.display = "block";
+      document.getElementById('userForm').style.display = "none";
+      document.getElementById('votes').style.display = "none";
+      document.getElementById('like').style.display = "none";
+      document.getElementById('next').style.display = 'none';
+      document.getElementById('previous').style.display = 'none';
+      
+    }
+
+    document.getElementById('viewCard').onclick = function(){
+      document.getElementById('nameForm').style.display = "none";
+      document.getElementById('userForm').style.display = "block";
+      document.getElementById('like').style.display = "block";
+      document.getElementById('next').style.display = 'inline';
+      document.getElementById('previous').style.display = 'inline';
+      document.getElementById('votes').style.display = "block";
+
+
+    }
+
     document.getElementById('nameField').onchange = function(){
-    
       setBackground(classImg.value, rarityImg.value);
-        }
+    }
     document.getElementById('attackField').onchange = function(){    
       setBackground(classImg.value, rarityImg.value);
-            }
+    }
     document.getElementById('healthField').onchange = function(){
       setBackground(classImg.value, rarityImg.value);
-        }
+    }
     document.getElementById('textField').onchange = function(){
       setBackground(classImg.value, rarityImg.value);
-        }
+    }
     document.getElementById('costField').onchange = function(){
       setBackground(classImg.value, rarityImg.value);        
-        }
+    }
+    document.getElementById('artField').onchange = function(){
+      readPic(document.getElementById('artField').value);        
+    }
       
       document.getElementById('next').onclick = function(){
         cardIndex++;
         drawFromServer(createdCards[cardIndex]);
-        console.log(createdCards.length);
+        document.getElementById("votes").innerHTML = "Votes: " + createdCards[cardIndex].score;
         if(cardIndex == createdCards.length-1){
           document.getElementById('next').disabled = true;
         }
@@ -294,10 +345,14 @@
         document.getElementById('next').disabled = false;
       }
 
+      document.getElementById('like').onclick = like;
+
       //Disable the buttons untill we get cards from the server
       document.getElementById('next').disabled = true;
       document.getElementById('previous').disabled = true;
+      document.getElementById('like').disabled = true;
 
+      setBackground(classImg.value, rarityImg.value);
     
     };
 
@@ -350,28 +405,28 @@
  
     function updateField(location, value, x, y){
       var textVal = document.getElementById(value).value;
-      document.getElementById(location).innerHTML = textVal;
+      //document.getElementById(location).innerHTML = textVal;
       ctx.font = "30px Arial";
       ctx.textAlign="center";    
       ctx.fillText(textVal,x,y);
       
     }
 
-    function  readPic(e) {
-      
+    function  readPic(url) {
       imgCtx.clearRect(0,0, imgCanvas.width,imgCanvas.height);
+      if(url === ""){
+        return;
+      }
+     
       var img = new Image();
-
-      var newImg = document.getElementById('setImg');
-      newImg.src =e.target.result;
-      newImg.width = canvas.width;
+          
       img.onload = function(){
         var ratio = img.height/img.width;
         imgCtx.globalCompositeOperation = 'destination-over';
-        imgCtx.drawImage(img, 40, 10, canvas.width-100, canvas.width* ratio - 10);
+        imgCtx.drawImage(img, 80, 40, 240,250);
         imgCtx.globalCompositeOperation = 'source-over';
         }
-      img.src = e.target.result;
+      img.src =url;
       
     }
 
@@ -382,8 +437,13 @@
 
 <body>
   <section id="top">
-    <h3>POST Status Code Tests</h3>
-    <form id="nameForm" action="/addCard" method="post">
+    <h2>Hearthstone Card Creator</h2>
+
+    <div class="tab">
+      <button id="makeCard">Create Card</button>
+      <button id="viewCard">View Cards</button>
+    </div>
+    <form id="nameForm" action="/addCard" method="post" class="cardBuilder">
       <label for="name">Card Name: </label>
       <input id="nameField" type="text" name="name" value="tempname" required />
       <label for="attack">Attack: </label>
@@ -418,9 +478,26 @@
         <option value="Images/gem_epic.png">Epic</option>
         <option value="Images/gem_legendary.png">Legendary</option>
       </select>
+      <label for="art">Card Art: </label>
+      <select id="artField" name="art">
+        <option value="">None</option>
+        <option value="Images/CardArt1.jpg">1</option>
+        <option value="Images/CardArt2.jpg">2</option>
+        <option value="Images/CardArt3.jpg">3</option>
+        <option value="Images/CardArt4.jpg">4</option>
+        <option value="Images/CardArt5.jpg">5</option>
+        <option value="Images/CardArt6.jpg">6</option>
+        <option value="Images/CardArt7.jpg">7</option>
+        <option value="Images/CardArt8.jpg">8</option>
+        <option value="Images/CardArt9.jpg">9</option>
+        <option value="Images/CardArt10.jpg">10</option>
+      </select>
+
+
+
       <input type="button" id='createCardButton' value="AddCard" />
     </form>
-    <form id="userForm" action="/getUsers" method="get">
+    <form id="userForm" action="/getUsers" method="get" class="cardViewer">
       <select id='urlField'>
         <option value='/getUsers'>/getUsers</option>
         <option value='/notReal'>/notReal</option>
@@ -445,7 +522,7 @@
 
       </select>
 
-       <label for="getRarity">Get cards of Rarity: </label>
+      <label for="getRarity">Get cards of Rarity: </label>
       <select id="getRarityField" name='getRarity'>
         <option value="All">All</option>
         <option value="Classic">Classic</option>
@@ -460,23 +537,19 @@
 
 
   </section>
-  <button id="next">Next Card</button>
-  <button id="previous">Previous Card</button>
-  <div id="wrapper">
-    <canvas id="imageCanvas" width="400" height="543"></canvas>
-    <canvas id="canvas" width="400" height="543"></canvas>
+  <div id="cardView">
+    <button id="previous">Previous Card</button>
+    <button id="next">Next Card</button>
 
+    <button id="like">Like</button>
+    <div id="wrapper">
+      <canvas id="imageCanvas" width="400" height="543"></canvas>
+      <canvas id="canvas" width="400" height="543"></canvas>
+
+    </div>
+    <p id="votes"></p>
+    <p id="content"></p>
   </div>
-  <div id="card">
-    <p id="setName"></p>
-    <p id="setAttack"></p>
-    <p id="setHealth"></p>
-    <p id="setText"></p>
-    <p id="setCost"></p>
-    <img id="setImg" src="#" />
-  </div>
-  <section id="content">
-  </section>
 </body>
 
 </html>

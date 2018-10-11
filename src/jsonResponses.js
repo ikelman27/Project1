@@ -32,22 +32,33 @@ const cardNotFound = (request, response, message) => {
   return respondJSON(request, response, 404, responseJSON);
 };
 
+
+const voteCard = (request, response, body) => {
+
+
+}
+
 const addUser = (request, response, body) => {
+
   const responseJSON = {
     message: 'name and age are required',
   };
 
-  console.log(body);
+  
 
   if (!body.name) {
     responseJSON.id = 'missingParams';
     return respondJSON(request, response, 400, responseJSON);
   }
 
+
+
+
   let responseCode = 201;
   let newCard = true;
   let cardLoc = 0;
   for (let i = 0; i < users.length; i++) {
+    
     if (users[i].name === body.name) {
       newCard = false;
       cardLoc = i;
@@ -56,13 +67,25 @@ const addUser = (request, response, body) => {
 
   if (!newCard) {
     responseCode = 204;
-    users[cardLoc].name = body.name;
-    users[cardLoc].cost = body.cost;
-    users[cardLoc].attack = body.attack;
-    users[cardLoc].health = body.health;
-    users[cardLoc].text = body.text;
-    users[cardLoc].rarity = body.rarity;
-    users[cardLoc].class = body.class;
+    if (body.vote) {
+      console.log(users[cardLoc].score);
+      users[cardLoc].score++;
+    } 
+    else if(request.connection.remoteAddress == author) {
+      users[cardLoc].name = body.name;
+      users[cardLoc].cost = body.cost;
+      users[cardLoc].attack = body.attack;
+      users[cardLoc].health = body.health;
+      users[cardLoc].text = body.text;
+      users[cardLoc].rarity = body.rarity;
+      users[cardLoc].class = body.class;
+      users[cardLoc].cardArt = body.cardArt;
+      users[cardLoc].score = 1;
+    }
+    else{
+      return forbidden(request, response);
+    }
+
   } else {
     // add new User to end of array
     users.push({
@@ -73,6 +96,9 @@ const addUser = (request, response, body) => {
       text: body.text,
       rarity: body.rarity,
       class: body.class,
+      cardArt: body.cardArt,
+      score: 1,
+      author: request.connection.remoteAddress,
     });
   }
 
@@ -122,6 +148,16 @@ const getUsersMeta = (request, response) => respondJSONMeta(request, response, 2
 
 
 const notFoundMeta = (request, response) => respondJSONMeta(request, response, 404);
+
+const forbidden = (request, response) => {
+  const responseJSON = {
+    message: 'Only a cards author can modify a card.',
+    id: 'Forbidden',
+  };
+
+
+  return respondJSON(request, response, 403, responseJSON);
+}
 
 // function for 404 not found requests with message
 const notFound = (request, response) => {
