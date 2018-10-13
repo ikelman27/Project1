@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>Our simple HTTP server</title>
+  <title>Hearthstone Card Creator</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <style>
 
@@ -11,30 +11,35 @@
   <script type="text/babel">
 
     var canvas, ctx, imgCanvas, imgCtx;
-
+    
+    //a list of cards that is returned by the server. Because only one card can be viewed at a time, this will store the cards not being viewed
     var createdCards= [];
+    //the index of the card that is currently being viewed
     var cardIndex = 0;
-    const handleResponse = (xhr, parseResponse) => {
-      const content = document.querySelector('#content');
-      //const type = xhr.getResponseHeader('content-type');
 
+    //Handels respnses from the server
+    const handleResponse = (xhr, parseResponse) => {
+
+      const content = document.querySelector('#content');
       console.log(xhr.status);
+
+      //Case management for different scenarios
       switch(xhr.status) {
         case 200: 
-          content.innerHTML = `<b>Success </b>`;
+          content.innerHTML = `<b>Found cards that matched.</b>`;
           break;
         case 201: 
-          content.innerHTML = `<b>User Created</b>`;
+          content.innerHTML = `<b>New Card Created</b>`;
           break;
         case 204:
-          
-          content.innerHTML = '<b>Updated</b>';
+          content.innerHTML = '<b>Card Updated</b>';
           break;
         case 400:
-          content.innerHTML = '<b>Bad Request</b>';
+          content.innerHTML = '<b>No cards found with those parameters</b>';
           break;
         case 403:
-          content.innerHTML = '<b>Forbidden</b>';
+          content.innerHTML = '<b>Only A cards Author can update a card</b>';
+          break;
         case 404: 
           content.innerHTML = `<b>Resource Not Found</b>`;
           break;
@@ -44,61 +49,75 @@
       
         }
        
-      
+        
         
         if(parseResponse && xhr.response) {
-   
+          
           const obj = JSON.parse(xhr.response);
           
-          console.dir(obj);
+          
+            
+          //console.dir(obj);
+
+          //if there are cards returned from the server display the first card
           if(obj.exportVal){
+            
+            //error handeling just to make sure that exported val is created and has at least one index
             if(obj.exportVal.length > 0){
              
-              //content.innerHTML += `<br/> ${obj.exportVal[0].score}`;'<b>Updated</b>
-              document.getElementById("votes").innerHTML = "<b>Votes: " + obj.exportVal[0].score +"</b>";
+              //set created card and card index to the values recieved from the server
               createdCards= obj.exportVal;
               cardIndex = 0;
-              drawFromServer(obj.exportVal[0]);
-              console.dir(obj.exportVal[0]);
-              document.getElementById('like').disabled = false;
-              if(obj.exportVal.length > 1){
-                
-                document.getElementById('next').disabled = false;
-                
 
+              //set the number of likes for the first card
+              document.getElementById("votes").innerHTML = "<b>Votes: " + obj.exportVal[0].score +"</b>";
+              
+              //draw the card
+              drawFromServer(obj.exportVal[0]);
+              //console.dir(obj.exportVal[0]);
+              //enable the like button and disable the previous button
+              document.getElementById('like').disabled = false;
+              document.getElementById('previous').disabled = true;
+
+              //if there are 2 or more cards enable the next button.
+              if(obj.exportVal.length > 1){                
+                document.getElementById('next').disabled = false;
               }
               else{
-                document.getElementById('next').disabled = true;
-                
+                document.getElementById('next').disabled = true;               
               }
 
             }
+
+            //if the number of cards returned from the server is 0 disable the viewing buttons and clear the card on the screen
             else{
-              document.getElementById('like').disabled = true;
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               imgCtx.clearRect(0, 0, canvas.width, canvas.height);
-
+              document.getElementById('like').disabled = true;
+              document.getElementById('previous').disabled = true;
+              document.getElementById('next').disabled = true;
+              document.getElementById("votes").innerHTML  ="";
             }
             
           }
           else{
-              content.innerHTML += `<br/>  ${obj.message}`;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              imgCtx.clearRect(0, 0, canvas.width, canvas.height);
+              document.getElementById('like').disabled = true;
+              document.getElementById('previous').disabled = true;
+              document.getElementById('next').disabled = true;
+              document.getElementById("votes").innerHTML  ="";
+              //content.innerHTML += `<br/>  ${obj.message}`;
             }
         }
         else {
-          console.log('received');
+          //console.log('received');
         }
-
-
     };
 
-   
 
-
+    //gets an update from the server
     const requestUpdate = (e, userForm) => {
-      
-      
-     
       
       const url = userForm.querySelector('#urlField').value;
       const method = userForm.querySelector('#methodSelect').value;
@@ -107,16 +126,19 @@
       const getRarity = userForm.querySelector('#getRarityField').value;
       //console.log(getClass);
       const xhr = new XMLHttpRequest();
+
+      //set the get request paramiters
       const qs = {
         class:getClass,
         rarity: getRarity,
 
       };
 
-      
-
+      //create the query part of the url
       const query = Object.keys(qs).map(key => key + '='+ qs[key]).join('&');
-      console.log(url +'?' +query);
+      //console.log(url +'?' +query);
+
+      //open the queryd url
       xhr.open(method, url +'?' +query);
 
       xhr.setRequestHeader('Accept', 'application/json');
@@ -140,33 +162,48 @@
 
     };
 
-    
+    //increases a cards like count by one when the like button is pressed
     function like(){
+
+      //error check to make sure that nothing happes/no error if there are no cards
       if(createdCards.length <= 0){
         return;
       }
+
+      //get the curently displayed cards name and score
       const nameField = createdCards[cardIndex].name;
-      const voteField = 1;
-      console.log(nameField);
+      //increase the score by 1
+      createdCards[cardIndex].score++;
+      
+      //display the change in score
+      document.getElementById("votes").innerHTML = "<b>Votes: " + (createdCards[cardIndex].score) +"</b>";
       const xhr = new XMLHttpRequest();
+      
+      
+      
       xhr.open('post', '/addCard');
       
       xhr.setRequestHeader('Accept', 'application/json');
 
       xhr.onload = () => handleResponse(xhr, true);
-      
+      //add the cards name and the vode field to the paramiter
       const formData = `name=${nameField}&vote=1`;
       xhr.send(formData);
       return false;
     }
 
+
+    //adds a new card to the server
     const sendPost = (e, nameForm) => {
       
+      //clear the screen
       imgCtx.drawImage(canvas, 0, 0);
       ctx.clearRect(0,0,canvas.width, canvas.height);
       
       imgCtx.clearRect(0,0,canvas.width, canvas.height );
       
+
+      //get all the input fields and save them as form data
       const nameAction = nameForm.getAttribute('action');
       const nameMethod = nameForm.getAttribute('method');
 
@@ -195,7 +232,7 @@
 
       const formData = `name=${nameField.value}&cost=${costField.value}&attack=${attackField.value}&health=${healthField.value}&text=${textField.value}&rarity=${rarityField}&class=${classField}&cardArt=${artField}`;
     
-    
+      //add and send the form data
       xhr.send(formData);
       
 
@@ -205,13 +242,16 @@
       
     };
 
-
+    //draws a card to the screen with data from the server
     function drawFromServer(card){
       var cardClass;
       var gemClass;
+
+      //get the selects where class rarity and image are
       var classImg = document.getElementById('classField');
       var rarityImg = document.getElementById('rarityField');
       var cardArt = document.getElementById('artField');
+      //loop through each slect and find the value that matches the image and get the url for that image
       for(var i = 0; i < classImg.length; i++){
         if(classImg[i].text == card.class){
           cardClass = classImg[i].value;
@@ -225,9 +265,9 @@
         }
       }
       
-
+      //draw the cards background, overload method with cards class
       setBackground(cardClass, gemClass, card);
-      
+      //draw the picture behind the card
       for(var i = 0; i <cardArt.length; i++){
         if(cardArt[i].text == card.cardArt){
           readPic(cardArt[i].value);
@@ -235,6 +275,7 @@
       }
     }
 
+    //updates each of thetext values from a piece of data
     function updateCardServer(card){
       updateFromServer("setName", card.name, 200, 300);
     
@@ -247,6 +288,7 @@
       updateFromServer("setCost", card.cost, 50, 50);
     }
 
+    //updates a specipfic text value from the server
     function updateFromServer(location, value, x, y){
       ctx.font = "30px Arial";
       ctx.textAlign="center";    
@@ -255,13 +297,14 @@
     }
 
     const init = () => {
-   
-
-
+      
+      //get the canvas and image canvas
       canvas = document.querySelector('#canvas');
       ctx = canvas.getContext('2d');
       imgCanvas = document.querySelector('#imageCanvas');
       imgCtx = imgCanvas.getContext('2d');
+
+
       //Post Instructions
       const nameForm = document.querySelector('#nameForm');
       const addUser = (e) => sendPost(e, nameForm);
@@ -271,74 +314,103 @@
       const userForm = document.querySelector('#userForm');
       const getUsers = (e) => requestUpdate(e, userForm);
       userForm.addEventListener('submit', getUsers);
-
-    var classImg = document.getElementById('classField');
-    var rarityImg = document.getElementById('rarityField');
-
+      
+      //get the class and rarity image slects
+      var classImg = document.getElementById('classField');
+      var rarityImg = document.getElementById('rarityField');
+      
+      //when the rarity is changed draw the new gem
       rarityImg.onchange = function(){
         //console.log( rarityImg.options[rarityImg.selectedIndex].text);
         setGem(rarityImg.value);
       }
+      
+      //same for the class image
+      classImg.onchange = function(){
 
-    classImg.onchange = function(){
-
-      setBackground(classImg.value, rarityImg.value);  
-    }
+        setBackground(classImg.value, rarityImg.value);  
+      }
     
-    document.getElementById('makeCard').onclick = function(){
-      document.getElementById('nameForm').style.display = "block";
-      document.getElementById('userForm').style.display = "none";
-      document.getElementById('votes').style.display = "none";
-      document.getElementById('like').style.display = "none";
-      document.getElementById('next').style.display = 'none';
-      document.getElementById('previous').style.display = 'none';
+      //when the make tab is clicked disable and enable everything respectivlye
+      document.getElementById('makeCard').onclick = function(){
+        document.getElementById('nameForm').style.display = "block";
+        document.getElementById('userForm').style.display = "none";
+        document.getElementById('votes').style.display = "none";
+        document.getElementById('like').style.display = "none";
+        document.getElementById('next').style.display = 'none';
+        document.getElementById('previous').style.display = 'none';
+
+        document.getElementById('makeCard').style.backgroundColor = "rgb(227, 235, 231)";
+        document.getElementById('viewCard').style.backgroundColor = "#f7f9fb";
+
+        setBackground(classImg.value, rarityImg.value);
+      }
       
-    }
+      //when the view tab is clicked disable and enable everything respectivlye
+      document.getElementById('viewCard').onclick = function(){
+        document.getElementById('nameForm').style.display = "none";
+        document.getElementById('like').style.display = "block";
+        document.getElementById('userForm').style.display = "block";
+        document.getElementById('previous').style.display = 'inline';
+        document.getElementById('next').style.display = 'inline';
+        document.getElementById('votes').style.display = "block";
+        document.getElementById('viewCard').style.backgroundColor = "rgb(227, 235, 231)";
+        document.getElementById('makeCard').style.backgroundColor = "#f7f9fb";
+        
+        //if there are cards from the server draw the last one you viewed
+        if(createdCards.length > 0){
+          drawFromServer(createdCards[cardIndex]);
+        }else{
+          //otherwise clear the screen
+          ctx.clearRect(0,0, canvas.width, canvas.height);
+          imgCtx.clearRect(0,0, canvas.width, canvas.height);
+        }
 
-    document.getElementById('viewCard').onclick = function(){
-      document.getElementById('nameForm').style.display = "none";
-      document.getElementById('userForm').style.display = "block";
-      document.getElementById('like').style.display = "block";
-      document.getElementById('next').style.display = 'inline';
-      document.getElementById('previous').style.display = 'inline';
-      document.getElementById('votes').style.display = "block";
-
 
     }
-
-    document.getElementById('nameField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);
-    }
-    document.getElementById('attackField').onchange = function(){    
-      setBackground(classImg.value, rarityImg.value);
-    }
-    document.getElementById('healthField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);
-    }
-    document.getElementById('textField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);
-    }
-    document.getElementById('costField').onchange = function(){
-      setBackground(classImg.value, rarityImg.value);        
-    }
-    document.getElementById('artField').onchange = function(){
-      readPic(document.getElementById('artField').value);        
-    }
+    //event listeners to update the drawings when the values are changed
+      document.getElementById('nameField').onchange = function(){
+        setBackground(classImg.value, rarityImg.value);
+      }
+      document.getElementById('attackField').onchange = function(){    
+        setBackground(classImg.value, rarityImg.value);
+      }
+      document.getElementById('healthField').onchange = function(){
+        setBackground(classImg.value, rarityImg.value);
+      }
+      document.getElementById('textField').onchange = function(){
+        setBackground(classImg.value, rarityImg.value);
+      }
+      document.getElementById('costField').onchange = function(){
+        setBackground(classImg.value, rarityImg.value);        
+      }
+      document.getElementById('artField').onchange = function(){
+        readPic(document.getElementById('artField').value);        
+      }
       
-      document.getElementById('next').onclick = function(){
+      
+    //when the next button is clicked display the next image in the list of cards created by the server
+    document.getElementById('next').onclick = function(){
+
+
         cardIndex++;
         drawFromServer(createdCards[cardIndex]);
-        document.getElementById("votes").innerHTML = "Votes: " + createdCards[cardIndex].score;
+        //update the card votes
+        document.getElementById("votes").innerHTML = "<b>Votes: " + createdCards[cardIndex].score +"</b>";
+
+        //if this is the last card disable the next button
         if(cardIndex == createdCards.length-1){
           document.getElementById('next').disabled = true;
         }
         document.getElementById('previous').disabled = false;
       }
-
+      
+      //same stuff for the previus buttons
       document.getElementById('previous').onclick = function(){
       
         cardIndex--;
         drawFromServer(createdCards[cardIndex]);
+        document.getElementById("votes").innerHTML = "<b>Votes: " + createdCards[cardIndex].score +"</b>";
         if(cardIndex == 0){
           document.getElementById('previous').disabled = true;
         }
@@ -351,22 +423,29 @@
       document.getElementById('next').disabled = true;
       document.getElementById('previous').disabled = true;
       document.getElementById('like').disabled = true;
-
+      
+      //set the default image
       setBackground(classImg.value, rarityImg.value);
     
     };
 
-
+    //sets an images background fromServer is a bool o determin is a card was creaded by user creation or from the server
     function setBackground(url, gemUrl, fromServer){
+
+      //clear the canvas and get hte image to draw
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       var img = new Image();
+      //when the image is loaded draw it
       img.onload = function(){
-        console.log(img.width + "   " + img.height);
+        //console.log(img.width + "   " + img.height);
         ctx.drawImage(img, -10, 0);
-        setGem(gemUrl); 
+        //draw the gem we do this because the canvas draws over the gem
+        setGem(gemUrl);
+        //if the card is from the server set the text values with server values 
         if(fromServer){
           updateCardServer(fromServer);
         }
+        //set the text values from the input boxes
         else{
           updateText();
         }
@@ -374,7 +453,7 @@
       img.src = url;
 
     }
-
+    //draws the gam
     function setGem(url){
       var img = new Image();
       img.onload = function(){
@@ -387,7 +466,7 @@
 
     }
     
-
+    //updates all the text in the field
     function updateText(){
 
       
@@ -399,10 +478,10 @@
   
       updateField("setText", "textField", 200, 430);
 
-      updateField("setCost", "costField", 50, 50);
+      updateField("setCost", "costField", 50, 70);
     }
 
- 
+  //updates a specific thext box at a specific index
     function updateField(location, value, x, y){
       var textVal = document.getElementById(value).value;
       //document.getElementById(location).innerHTML = textVal;
@@ -411,17 +490,26 @@
       ctx.fillText(textVal,x,y);
       
     }
-
+    
+    //draws the cards portrait
     function  readPic(url) {
+
+
       imgCtx.clearRect(0,0, imgCanvas.width,imgCanvas.height);
+      //if there is no picture dont draw anything
       if(url === ""){
+
         return;
       }
      
       var img = new Image();
-          
+      
       img.onload = function(){
+
+        //set the ratio so the image fits in the portrait
         var ratio = img.height/img.width;
+
+        //set the composite so the image is drawn behind the other canvas
         imgCtx.globalCompositeOperation = 'destination-over';
         imgCtx.drawImage(img, 80, 40, 240,250);
         imgCtx.globalCompositeOperation = 'source-over';
@@ -437,26 +525,30 @@
 
 <body>
   <section id="top">
-    <h2>Hearthstone Card Creator</h2>
-
+    <div id="header">
+      <h1>Hearthstone Card Creator</h1>
+    </div>
     <div class="tab">
       <button id="makeCard">Create Card</button>
       <button id="viewCard">View Cards</button>
     </div>
     <form id="nameForm" action="/addCard" method="post" class="cardBuilder">
-      <label for="name">Card Name: </label>
-      <input id="nameField" type="text" name="name" value="tempname" required />
-      <label for="attack">Attack: </label>
-      <input id="attackField" type="number" name="attack" min="0" max="100" step="1" value="1" required />
-      <label for="health">Health: </label>
-      <input id="healthField" type="number" name="health" min="0" max="100" step="1" value="1" required />
-      <label for="cost">Cost: </label>
-      <input id="costField" type="number" name="cost" min="0" max="100" step="1" value="1" required />
-      <label for="cardText">Card Text: </label>
-      <input id="textField" type="text" name="cardText" value="1" required />
-      <label for="class">Class: </label>
-
-      <select id="classField" name="class">
+      <label for="name" class="inputForm">Card Name: </label>
+      <input id="nameField" type="text" name="name" value="tempname" required class="inputForm" />
+      <label for="attack" class="inputForm">Attack: </label>
+      <input id="attackField" class="inputForm" type="number" name="attack" min="0" max="100" step="1" value="1"
+        required />
+      <label for="health" class="inputForm">Health: </label>
+      <input id="healthField" class="inputForm" type="number" name="health" min="0" max="100" step="1" value="1"
+        required />
+      <br />
+      <label for="cost" class="inputForm">Cost: </label>
+      <input id="costField" type="number" class="inputForm" name="cost" min="0" max="100" step="1" value="1" required />
+      <label for="cardText" class="inputForm">Card Text: </label>
+      <textarea rows="2" cols="30" id="textField" class="inputForm" type="text" name="cardText" value="1" required></textarea>
+      <br />
+      <label for="class" class="inputForm">Class: </label>
+      <select id="classField" name="class" class="inputForm">
         <option value="Images/card_minion_neutral.png">Neutral</option>
         <option value="Images/card_minion_mage.png">Mage</option>
         <option value="Images/card_minion_warrior.png">Warrior</option>
@@ -470,16 +562,16 @@
 
       </select>
 
-      <label for="rarity">Rarity: </label>
-      <select id="rarityField" name='rarity'>
+      <label for="rarity" class="inputForm">Rarity: </label>
+      <select id="rarityField" class="inputForm" name='rarity'>
         <option value="">Classic</option>
-        <option value="Images/gem_common.png">Common</option>
+        <option value="Images/gem_common.png">Common</option>`
         <option value="Images/gem_rare.png">Rare</option>
         <option value="Images/gem_epic.png">Epic</option>
         <option value="Images/gem_legendary.png">Legendary</option>
       </select>
-      <label for="art">Card Art: </label>
-      <select id="artField" name="art">
+      <label for="art" class="inputForm">Card Art: </label>
+      <select id="artField" class="inputForm" name="art">
         <option value="">None</option>
         <option value="Images/CardArt1.jpg">1</option>
         <option value="Images/CardArt2.jpg">2</option>
@@ -494,20 +586,20 @@
       </select>
 
 
-
+      <br />
       <input type="button" id='createCardButton' value="AddCard" />
     </form>
     <form id="userForm" action="/getUsers" method="get" class="cardViewer">
-      <select id='urlField'>
+      <select id='urlField' class="inputForm">
         <option value='/getUsers'>/getUsers</option>
         <option value='/notReal'>/notReal</option>
       </select>
-      <select id="methodSelect">
+      <select id="methodSelect" class="inputForm">
         <option value="get">GET</option>
         <option value="head">HEAD</option>
       </select>
-      <label for="getClass">Get cards of class: </label>
-      <select id="getClass" name="getClass">
+      <label for="getClass" class="inputForm">Get cards of class: </label>
+      <select id="getClass" name="getClass" class="inputForm">
         <option value="All">All</option>
         <option value="Neutral">Neutral</option>
         <option value="Mage">Mage</option>
@@ -522,8 +614,8 @@
 
       </select>
 
-      <label for="getRarity">Get cards of Rarity: </label>
-      <select id="getRarityField" name='getRarity'>
+      <label for="getRarity" class="inputForm">Get cards of Rarity: </label>
+      <select id="getRarityField" class="inputForm" name='getRarity'>
         <option value="All">All</option>
         <option value="Classic">Classic</option>
         <option value="Common">Common</option>
@@ -531,8 +623,8 @@
         <option value="Epic">Epic</option>
         <option value="Legendary">Legendary</option>
       </select>
-
-      <input type="submit" id='getUser' value="Get User" />
+      <br />
+      <input type="submit" class="inputForm" id='getUser' value="Get User" />
     </form>
 
 

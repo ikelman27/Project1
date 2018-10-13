@@ -39,7 +39,7 @@ const cardNotFound = (request, response, message) => {
   };
 
 
-  return respondJSON(request, response, 404, responseJSON);
+  return respondJSON(request, response, 400, responseJSON);
 };
 
 
