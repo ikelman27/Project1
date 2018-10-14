@@ -1,5 +1,5 @@
 
-//an array of all cards on the server
+// an array of all cards on the server
 const users = [];
 
 
@@ -22,7 +22,7 @@ const respondJSONMeta = (request, response, status) => {
   response.end();
 };
 
-//forbiden for Author errors
+// forbiden for Author errors
 const forbidden = (request, response) => {
   const responseJSON = {
     message: 'Only a cards author can modify a card.',
@@ -33,7 +33,7 @@ const forbidden = (request, response) => {
   return respondJSON(request, response, 403, responseJSON);
 };
 
-//400 returned for empty get requests
+// 400 returned for empty get requests
 const cardNotFound = (request, response, message) => {
   // create error message for response
   const responseJSON = {
@@ -46,42 +46,42 @@ const cardNotFound = (request, response, message) => {
 };
 
 
-//adds a card to the server
+// adds a card to the server
 const addUser = (request, response, body) => {
   const responseJSON = {
     message: 'Card name is requiored',
   };
 
-  //if there is no name return 400 with missing params
+  // if there is no name return 400 with missing params
   if (!body.name) {
     responseJSON.id = 'missingParams';
     return respondJSON(request, response, 400, responseJSON);
   }
 
-  //set default checks for cardloc response code and assume the card is new
+  // set default checks for cardloc response code and assume the card is new
   let responseCode = 201;
   let newCard = true;
   let cardLoc = 0;
-  //Loop through all cards and check if any have the same name as the new card
+  // Loop through all cards and check if any have the same name as the new card
   for (let i = 0; i < users.length; i++) {
     if (users[i].name === body.name) {
-      //if there is set newcard to false and get the cards index
+      // if there is set newcard to false and get the cards index
       newCard = false;
       cardLoc = i;
     }
   }
 
-  //If the card isn't new update the exesting card
+  // If the card isn't new update the exesting card
   if (!newCard) {
-    
     responseCode = 204;
-    
-    //if the card is a vote increase the card's score by 1. 
+
+    // if the card is a vote increase the card's score by 1.
     if (body.vote) {
       users[cardLoc].score++;
-      //otherwise if the IP address for the client and the author are the same update the card, otherwise return a forbidden error
+      // otherwise if the IP address for the client and the author are the same update the card,
+      // otherwise return a forbidden error
     } else if (request.connection.remoteAddress === users[cardLoc].author) {
-      //update the card
+      // update the card
       users[cardLoc].name = body.name;
       users[cardLoc].cost = body.cost;
       users[cardLoc].attack = body.attack;
@@ -92,10 +92,10 @@ const addUser = (request, response, body) => {
       users[cardLoc].cardArt = body.cardArt;
       users[cardLoc].score = 1;
     } else {
-      //403 error
+      // 403 error
       return forbidden(request, response);
     }
-    //IF there is no card with this name add it to the array of cards
+    // IF there is no card with this name add it to the array of cards
   } else {
     // add new User to end of array
     users.push({
@@ -107,13 +107,13 @@ const addUser = (request, response, body) => {
       rarity: body.rarity,
       class: body.class,
       cardArt: body.cardArt,
-      //default score is one
+      // default score is one
       score: 1,
       author: request.connection.remoteAddress,
     });
   }
 
-  //if the card is an new return a 201, otherwise return a 204 for udpated
+  // if the card is an new return a 201, otherwise return a 204 for udpated
   if (responseCode === 201) {
     responseJSON.message = 'Created Sucessfully';
     return respondJSON(request, response, responseCode, responseJSON);
@@ -122,39 +122,38 @@ const addUser = (request, response, body) => {
   return respondJSONMeta(request, response, responseCode);
 };
 
-//gets users based off querys
+// gets users based off querys
 const getUsers = (request, response, params) => {
-  //exportVal is the array of cards returned from the server
+  // exportVal is the array of cards returned from the server
   let exportVal = [];
   // if there are no paramiters return every card
   if (!params) {
     exportVal = users;
   }
 
-  //get the keys of every paramiter
+  // get the keys of every paramiter
   const keys = Object.keys(params);
   // console.log("Key length " + keys.length);
 
   // loop through every card and check if it meets params to return
   for (let i = 0; i < users.length; i++) {
     let addCard = true;
-    //for each card check every key in the query string to make sure it matches every key-value
+    // for each card check every key in the query string to make sure it matches every key-value
     for (let j = 0; j < keys.length; j++) {
-      //Lines like this are why people dont like javascript, checks if the cards value for a key is equal to the querys value for the key
-      //also checks if the query value dosent equal All, aka all values for the key. 
+      // Lines like this are why people dont like javascript,
+      // checks if the cards value for a key is equal to the querys value for the key
+      // also checks if the query value dosent equal All, aka all values for the key.
       if (params[keys[j]] !== users[i][keys[j]] && params[keys[j]] !== 'All') {
-        //if they dont match dont add the card
+        // if they dont match dont add the card
         addCard = false;
       }
     }
-    //if the card matches the query, add it to the end of the export array
+    // if the card matches the query, add it to the end of the export array
     if (addCard) {
       exportVal.push(users[i]);
     }
-
-
   }
-  //if there are no cards return a 400 error with no cards found
+  // if there are no cards return a 400 error with no cards found
   if (exportVal.length === 0) {
     return cardNotFound(request, response, 'no cards match that description');
   }

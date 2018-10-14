@@ -10,12 +10,12 @@ const jsonHandler = require('./jsonResponses.js');
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 
-//adds a card to the server
+// adds a card to the server
 const handlePost = (request, response, parsedUrl) => {
   if (parsedUrl.pathname === '/addCard') {
     const body = [];
 
-    //error handeling
+    // error handeling
     request.on('error', (err) => {
       console.dir(err);
       response.statusCode = 400;
@@ -40,11 +40,11 @@ const handlePost = (request, response, parsedUrl) => {
 const onRequest = (request, response) => {
   const parsedUrl = url.parse(request.url);
 
-  //parse the qs
+  // parse the qs
   const params = query.parse(parsedUrl.query);
 
   // console.log(params);
-  //basic case handeling 
+  // basic case handeling
   if (request.method === 'POST') {
     handlePost(request, response, parsedUrl);
   } else if (request.method === 'GET') {
